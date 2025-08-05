@@ -12,6 +12,7 @@ galaxy_info:
 
 dependencies:
   - role: geerlingguy.docker
+    version: "7.4.7"
     vars:
       docker_users:
         - vagrant
