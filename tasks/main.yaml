@@ -1,0 +1,17 @@
+---
+- name: Variables to install and configure Docker with TLS support
+  debug:
+    msg: 
+    - "inventory_hostname: {{ inventory_hostname }}"
+    - "docker_users: {{ docker_users }}"
+    - "docker_cert_dir: {{ docker_cert_dir }}"
+    - "ansible_all_ipv4_addresses: {{ ansible_all_ipv4_addresses }}"
+    - "docker_client_users: {{ docker_client_users }}"
+    - "ca_valid_days: {{ ca_valid_days }}"
+    - "cert_valid_days: {{ cert_valid_days}}"
+    - "cert_bits: {{ cert_bits }}"
+
+- import_tasks: create-x509-certs.yaml
+- import_tasks: copy-certs-to-host.yml
+- import_tasks: config-docker-service.yml
+- import_tasks: config-docker-client.yml

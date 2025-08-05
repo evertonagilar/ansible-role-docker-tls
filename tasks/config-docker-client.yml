@@ -1,0 +1,75 @@
+---
+- name: Obter lista de usuários válidos
+  command: "getent passwd {{ item }}"
+  register: passwd_result
+  loop: "{{ docker_client_users }}"
+  failed_when: false
+  changed_when: false
+
+- name: Filter existent users
+  set_fact:
+    existing_docker_users: "{{ passwd_result.results | selectattr('rc', 'equalto', 0) | map(attribute='item') | list }}"
+
+- name: Create ~/.docker folder and copy certs to each user
+  block:
+    - name: Create ~/.docker
+      file:
+        path: "/home/{{ item }}/.docker"
+        state: directory
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: '0700'
+      loop: "{{ existing_docker_users }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Copy cert.pem
+      copy:
+        src: "{{ docker_cert_dir }}/cert.pem"
+        dest: "/home/{{ item }}/.docker/cert.pem"
+        remote_src: yes
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: '0600'
+      loop: "{{ existing_docker_users }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Copy key.pem
+      copy:
+        src: "{{ docker_cert_dir }}/key.pem"
+        dest: "/home/{{ item }}/.docker/key.pem"
+        remote_src: yes
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: '0600'
+      loop: "{{ existing_docker_users }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Copy ca.pem
+      copy:
+        src: "{{ docker_cert_dir }}/ca.pem"
+        dest: "/home/{{ item }}/.docker/ca.pem"
+        remote_src: yes
+        owner: "{{ item }}"
+        group: "{{ item }}"
+        mode: '0600'
+      loop: "{{ existing_docker_users }}"
+      loop_control:
+        label: "{{ item }}"
+
+
+- name: Define DOCKER_HOST variable in .bashrc for each user
+  lineinfile:
+    path: "/home/{{ item }}/.bashrc"
+    line: 'export DOCKER_HOST=tcp://127.0.0.1:2376 DOCKER_TLS_VERIFY=1'
+    create: yes
+    state: present
+    insertafter: EOF
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: '0644'
+  loop: "{{ existing_docker_users }}"
+  loop_control:
+    label: "{{ item }}"

@@ -1,0 +1,35 @@
+---
+- name: Create local directory to save certs
+  delegate_to: localhost
+  run_once: true
+  file:
+    path: "./certs/{{ inventory_hostname }}"
+    state: directory
+    mode: '0777'
+
+- name: Copy file cert.pem to remote host
+  fetch:
+    src: /etc/docker/certs/cert.pem
+    dest: "./certs/{{ inventory_hostname }}/cert.pem"
+    flat: yes
+
+- name: Copy file key.pem to remote host
+  fetch:
+    src: /etc/docker/certs/key.pem
+    dest: "./certs/{{ inventory_hostname }}/key.pem"
+    flat: yes
+
+- name: Copy file ca.pem to remote host
+  fetch:
+    src: /etc/docker/certs/ca.pem
+    dest: "./certs/{{ inventory_hostname }}/ca.pem"
+    flat: yes
+
+- name: Change owner of certs to local user
+  delegate_to: localhost
+  run_once: true
+  become: true
+  vars:
+    local_user: "{{ lookup('env','USER') }}"
+  command: chown -R "{{ local_user }}:" ./certs/
+

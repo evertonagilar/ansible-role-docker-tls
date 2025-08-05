@@ -1,0 +1,120 @@
+---
+- name: Ensure cert directory exists
+  file:
+    path: "{{ docker_cert_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create server CSR config with all IPs
+  copy:
+    dest: "{{ docker_cert_dir }}/server-csr.conf"
+    content: |
+      [ req ]
+      default_bits       = {{ cert_bits }}
+      prompt             = no
+      default_md         = sha256
+      distinguished_name = dn
+      req_extensions     = v3_req
+
+      [ dn ]
+      CN = {{ ansible_hostname }}
+
+      [ v3_req ]
+      subjectAltName = @alt_names
+      keyUsage = critical, digitalSignature, keyEncipherment
+      extendedKeyUsage = serverAuth
+
+      [ alt_names ]
+      {% set ips = (ansible_all_ipv4_addresses + ['127.0.0.1']) | unique | sort %}
+      {% for ip in ips %}
+      IP.{{ loop.index }} = {{ ip }}
+      {% endfor %}
+
+- name: Create client CSR config
+  copy:
+    dest: "{{ docker_cert_dir }}/client-csr.conf"
+    content: |
+      [ req ]
+      default_bits       = {{ cert_bits }}
+      prompt             = no
+      default_md         = sha256
+      distinguished_name = dn
+      req_extensions     = v3_req
+
+      [ dn ]
+      CN = docker-client
+
+      [ v3_req ]
+      keyUsage = critical, digitalSignature, keyEncipherment
+      extendedKeyUsage = clientAuth
+
+- name: Generate CA private key
+  command: openssl genrsa -out {{ docker_cert_dir }}/ca-key.pem {{ cert_bits }}
+  args:
+    creates: "{{ docker_cert_dir }}/ca-key.pem"
+
+- name: Generate CA certificate
+  command: >
+    openssl req -x509 -new -nodes
+    -key {{ docker_cert_dir }}/ca-key.pem
+    -sha256 -days {{ ca_valid_days }}
+    -out {{ docker_cert_dir }}/ca.pem
+    -subj "/CN=docker-ca"
+  args:
+    creates: "{{ docker_cert_dir }}/ca.pem"
+
+- name: Generate server private key
+  command: openssl genrsa -out {{ docker_cert_dir }}/server-key.pem {{ cert_bits }}
+  args:
+    creates: "{{ docker_cert_dir }}/server-key.pem"
+
+- name: Generate server CSR
+  command: >
+    openssl req -new
+    -key {{ docker_cert_dir }}/server-key.pem
+    -out {{ docker_cert_dir }}/server.csr
+    -config {{ docker_cert_dir }}/server-csr.conf
+  args:
+    creates: "{{ docker_cert_dir }}/server.csr"
+
+- name: Generate server certificate
+  command: >
+    openssl x509 -req
+    -in {{ docker_cert_dir }}/server.csr
+    -CA {{ docker_cert_dir }}/ca.pem
+    -CAkey {{ docker_cert_dir }}/ca-key.pem
+    -CAcreateserial
+    -out {{ docker_cert_dir }}/server-cert.pem
+    -days {{ cert_valid_days }} -sha256
+    -extensions v3_req
+    -extfile {{ docker_cert_dir }}/server-csr.conf
+  args:
+    creates: "{{ docker_cert_dir }}/server-cert.pem"
+
+- name: Generate client private key
+  command: openssl genrsa -out {{ docker_cert_dir }}/key.pem {{ cert_bits }}
+  args:
+    creates: "{{ docker_cert_dir }}/key.pem"
+
+- name: Generate client CSR
+  command: >
+    openssl req -new
+    -key {{ docker_cert_dir }}/key.pem
+    -out {{ docker_cert_dir }}/client.csr
+    -config {{ docker_cert_dir }}/client-csr.conf
+  args:
+    creates: "{{ docker_cert_dir }}/client.csr"
+
+- name: Generate client certificate
+  command: >
+    openssl x509 -req
+    -in {{ docker_cert_dir }}/client.csr
+    -CA {{ docker_cert_dir }}/ca.pem
+    -CAkey {{ docker_cert_dir }}/ca-key.pem
+    -CAcreateserial
+    -out {{ docker_cert_dir }}/cert.pem
+    -days {{ cert_valid_days }} -sha256
+    -extensions v3_req
+    -extfile {{ docker_cert_dir }}/client-csr.conf
+  args:
+    creates: "{{ docker_cert_dir }}/cert.pem"

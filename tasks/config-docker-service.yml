@@ -1,0 +1,44 @@
+---
+- name: Substituir docker.service com versão HTTPS customizada
+  copy:
+    dest: /lib/systemd/system/docker.service
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Docker Application Container Engine
+      Documentation=https://docs.docker.com
+      After=network-online.target nss-lookup.target firewalld.service containerd.service time-set.target
+      Wants=network-online.target containerd.service
+      Requires=containerd.service
+      StartLimitBurst=3
+      StartLimitIntervalSec=60
+
+      [Service]
+      Type=notify
+      ExecStart=/usr/bin/dockerd \
+        -H tcp://0.0.0.0:2376 \
+        --tlsverify \
+        --tlscacert={{ docker_cert_dir }}/ca.pem \
+        --tlscert={{ docker_cert_dir }}/server-cert.pem \
+        --tlskey={{ docker_cert_dir }}/server-key.pem \
+        --containerd=/run/containerd/containerd.sock
+      ExecReload=/bin/kill -s HUP $MAINPID
+      TimeoutStartSec=0
+      RestartSec=2
+      Restart=always
+      LimitNPROC=infinity
+      LimitCORE=infinity
+      TasksMax=infinity
+      Delegate=yes
+      KillMode=process
+      OOMScoreAdjust=-500
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Recarregar systemd
+  command: systemctl daemon-reload
+  notify: Restart Docker
+

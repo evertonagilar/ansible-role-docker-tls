@@ -1,0 +1,18 @@
+galaxy_info:
+  author: Everton de Vargas Agilar
+  description: Setup Docker with TLS support
+  license: MIT
+  min_ansible_version: "2.10"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - jammy
+
+
+dependencies:
+  - role: geerlingguy.docker
+    vars:
+      docker_users:
+        - vagrant
+
