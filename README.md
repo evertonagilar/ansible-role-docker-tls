@@ -29,7 +29,7 @@ This Ansible role installs **Docker Engine** with **TLS support** on Debian-base
 ## Example Usage
 
 ```yaml
-- hosts: docker_hosts
+- hosts: all
   become: true
   roles:
     - role: evertonagilar.docker-tls
