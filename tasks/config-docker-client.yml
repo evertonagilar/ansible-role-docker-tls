@@ -1,5 +1,5 @@
 ---
-- name: Criar ~/.docker para cada usuário
+- name: Create ~/.docker directory for each user
   file:
     path: "{{ item.home }}/.docker"
     state: directory
@@ -8,7 +8,7 @@
     mode: '0700'
   loop: "{{ existing_docker_users_info }}"
 
-- name: Copiar cert.pem para cada usuário
+- name: Copy cert.pem to .docker/ for each user
   copy:
     src: "{{ docker_cert_dir }}/cert.pem"
     dest: "{{ item.home }}/.docker/cert.pem"
@@ -18,7 +18,7 @@
     mode: '0600'
   loop: "{{ existing_docker_users_info }}"
 
-- name: Copiar key.pem para cada usuário
+- name: Copy key.pem to .docker/ for each user
   copy:
     src: "{{ docker_cert_dir }}/key.pem"
     dest: "{{ item.home }}/.docker/key.pem"
@@ -28,7 +28,7 @@
     mode: '0600'
   loop: "{{ existing_docker_users_info }}"
 
-- name: Copiar ca.pem para cada usuário
+- name: Copy ca.pem to .docker/ for each user
   copy:
     src: "{{ docker_cert_dir }}/ca.pem"
     dest: "{{ item.home }}/.docker/ca.pem"
@@ -38,7 +38,7 @@
     mode: '0600'
   loop: "{{ existing_docker_users_info }}"
 
-- name: Definir variável DOCKER_HOST em .bashrc para cada usuário
+- name: Set variable DOCKER_HOST in .bashrc for each user
   lineinfile:
     path: "{{ item.home }}/.bashrc"
     line: 'export DOCKER_HOST=tcp://127.0.0.1:2376 DOCKER_TLS_VERIFY=1'
