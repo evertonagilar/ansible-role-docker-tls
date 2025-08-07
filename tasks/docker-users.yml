@@ -11,7 +11,7 @@
       {% set output = [] %}
       {% for line in passwd_result.stdout.splitlines() %}
         {% set parts = line.split(':') %}
-        {% if parts | length >= 7 and parts[2] | int >= 999 and parts[0] != 'nobody' and parts[6] != '/usr/sbin/nologin' and parts[6] != '/bin/false' %}
+        {% if parts | length >= 7 and (parts[2] | int >= 999 or parts[0] == 'root') and parts[0] != 'nobody' and parts[6] != '/usr/sbin/nologin' and parts[6] != '/bin/false' %}
           {% set _ = output.append(parts[0]) %}
         {% endif %}
       {% endfor %}
