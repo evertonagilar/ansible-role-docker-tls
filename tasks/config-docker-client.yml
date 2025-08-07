@@ -42,10 +42,10 @@
   loop: "{{ existing_docker_users_info }}"
   notify: Restart Docker
 
-- name: Set variable DOCKER_HOST in .bashrc for each user
+- name: Set DOCKER_HOST in .bashrc
   lineinfile:
     path: "{{ item.home }}/.bashrc"
-    line: 'export DOCKER_HOST=tcp://127.0.0.1:2376 DOCKER_TLS_VERIFY=1'
+    line: 'export DOCKER_HOST=tcp://127.0.0.1:2376'
     create: yes
     state: present
     insertafter: EOF
@@ -53,4 +53,39 @@
     group: "{{ item.username }}"
     mode: '0644'
   loop: "{{ existing_docker_users_info }}"
-  notify: Restart Docker
+
+- name: Set DOCKER_TLS_VERIFY in .bashrc
+  lineinfile:
+    path: "{{ item.home }}/.bashrc"
+    line: 'export DOCKER_TLS_VERIFY=1'
+    create: yes
+    state: present
+    insertafter: EOF
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0644'
+  loop: "{{ existing_docker_users_info }}"
+
+- name: Set DOCKER_HOST in .profile
+  lineinfile:
+    path: "{{ item.home }}/.profile"
+    line: 'export DOCKER_HOST=tcp://127.0.0.1:2376'
+    create: yes
+    state: present
+    insertafter: EOF
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0644'
+  loop: "{{ existing_docker_users_info }}"
+
+- name: Set DOCKER_TLS_VERIFY in .profile
+  lineinfile:
+    path: "{{ item.home }}/.profile"
+    line: 'export DOCKER_TLS_VERIFY=1'
+    create: yes
+    state: present
+    insertafter: EOF
+    owner: "{{ item.username }}"
+    group: "{{ item.username }}"
+    mode: '0644'
+  loop: "{{ existing_docker_users_info }}"
