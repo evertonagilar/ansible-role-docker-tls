@@ -7,6 +7,7 @@
     group: "{{ item.username }}"
     mode: '0700'
   loop: "{{ existing_docker_users_info }}"
+  notify: Restart Docker
 
 - name: Copy cert.pem to .docker/ for each user
   copy:
@@ -17,6 +18,7 @@
     group: "{{ item.username }}"
     mode: '0600'
   loop: "{{ existing_docker_users_info }}"
+  notify: Restart Docker
 
 - name: Copy key.pem to .docker/ for each user
   copy:
@@ -27,6 +29,7 @@
     group: "{{ item.username }}"
     mode: '0600'
   loop: "{{ existing_docker_users_info }}"
+  notify: Restart Docker
 
 - name: Copy ca.pem to .docker/ for each user
   copy:
@@ -37,6 +40,7 @@
     group: "{{ item.username }}"
     mode: '0600'
   loop: "{{ existing_docker_users_info }}"
+  notify: Restart Docker
 
 - name: Set variable DOCKER_HOST in .bashrc for each user
   lineinfile:
@@ -49,3 +53,4 @@
     group: "{{ item.username }}"
     mode: '0644'
   loop: "{{ existing_docker_users_info }}"
+  notify: Restart Docker
