@@ -1,5 +1,5 @@
 ---
-- name: Substituir docker.service com versão HTTPS customizada
+- name: Create docker.service with TLS support
   copy:
     dest: /lib/systemd/system/docker.service
     owner: root
@@ -38,7 +38,7 @@
       [Install]
       WantedBy=multi-user.target
 
-- name: Recarregar systemd
+- name: Reload and restart Docker
   command: systemctl daemon-reload
   notify: Restart Docker
 

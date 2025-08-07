@@ -2,7 +2,3 @@ docker_cert_dir: /etc/docker/certs
 ca_valid_days: 3650
 cert_valid_days: 3650
 cert_bits: 2048
-docker_client_users: 
-- vagrant
-- ubuntu
-- sigctl

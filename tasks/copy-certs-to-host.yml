@@ -1,35 +1,42 @@
----
-- name: Create local directory to save certs
+- name: Detect local user from localhost
   delegate_to: localhost
-  run_once: true
+  ansible.builtin.set_fact:
+    local_user: "{{ lookup('env', 'USER') }}"
+
+- name: Certs path fact
+  ansible.builtin.set_fact:
+    certs:
+    - { src: "/etc/docker/certs/cert.pem", dest: "cert.pem" }
+    - { src: "/etc/docker/certs/key.pem", dest: "key.pem" }
+    - { src: "/etc/docker/certs/ca.pem",  dest: "ca.pem" }
+
+
+- name: Create ./certs/{{ inventory_hostname }} on localhost
+  delegate_to: localhost
+  become: false
   file:
     path: "./certs/{{ inventory_hostname }}"
     state: directory
     mode: '0777'
 
-- name: Copy file cert.pem to remote host
-  fetch:
-    src: /etc/docker/certs/cert.pem
-    dest: "./certs/{{ inventory_hostname }}/cert.pem"
-    flat: yes
-
-- name: Copy file key.pem to remote host
-  fetch:
-    src: /etc/docker/certs/key.pem
-    dest: "./certs/{{ inventory_hostname }}/key.pem"
-    flat: yes
-
-- name: Copy file ca.pem to remote host
-  fetch:
-    src: /etc/docker/certs/ca.pem
-    dest: "./certs/{{ inventory_hostname }}/ca.pem"
-    flat: yes
-
-- name: Change owner of certs to local user
-  delegate_to: localhost
-  run_once: true
+- name: Slurpar certs from remote
   become: true
-  vars:
-    local_user: "{{ lookup('env','USER') }}"
-  command: chown -R "{{ local_user }}:" ./certs/
+  ansible.builtin.slurp:
+    src: "{{ item.src }}"
+  register: certs_raw
+  loop: "{{ certs }}"
+  loop_control:
+    label: "{{ item.src }}"
 
+- name: Copy certs to localhost
+  delegate_to: localhost
+  become: false
+  ansible.builtin.copy:
+    content: "{{ item.1.content | b64decode }}"
+    dest: "./certs/{{ inventory_hostname }}/{{ item.0.dest }}"
+    owner: "{{ local_user }}"
+    group: "{{ local_user }}"
+    mode: '0644'
+  loop: "{{ certs | zip(certs_raw.results) | list }}"
+  loop_control:
+    label: "{{ item.0.dest }}"

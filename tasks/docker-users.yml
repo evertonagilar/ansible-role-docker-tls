@@ -1,0 +1,47 @@
+---
+- name: Get passwd users
+  command: "getent passwd"
+  register: passwd_result
+  failed_when: false
+  changed_when: false
+
+- name: Get users to operate Docker
+  set_fact:
+    docker_users_str: >-
+      {% set output = [] %}
+      {% for line in passwd_result.stdout.splitlines() %}
+        {% set parts = line.split(':') %}
+        {% if parts | length >= 7 and parts[2] | int >= 999 and parts[0] != 'nobody' and parts[6] != '/usr/sbin/nologin' and parts[6] != '/bin/false' %}
+          {% set _ = output.append(parts[0]) %}
+        {% endif %}
+      {% endfor %}
+      {{ output | to_json }}
+
+- name: Convert docker_users_str to list
+  set_fact:
+    docker_users: "{{ docker_users_str | from_json }}"
+
+- name: Users to config Docker client
+  debug:
+    msg: "docker_users: {{ docker_users }}"
+
+- name: Set fact for existing Docker users info
+  set_fact:
+    existing_docker_users_info_str: >
+      {% set output = [] %}
+      {% for line in passwd_result.stdout.splitlines() %}
+        {% set parts = line.split(':') %}
+        {% if parts | length >= 7 and parts[0] in docker_users %}
+          {% set _ = output.append({'username': parts[0], 'home': parts[5]}) %}
+        {% endif %}
+      {% endfor %}
+      {{ output | to_json }}
+
+
+- name: Convert existing_docker_users_info_str to list
+  set_fact:
+    existing_docker_users_info: "{{ existing_docker_users_info_str | from_json }}"
+
+- name: Debug existing_docker_users_info
+  debug:
+    var: existing_docker_users_info
