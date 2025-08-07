@@ -89,3 +89,11 @@
     group: "{{ item.username }}"
     mode: '0644'
   loop: "{{ existing_docker_users_info }}"
+
+- name: Ensure sudo keeps DOCKER_* environment variables
+  copy:
+    dest: /etc/sudoers.d/docker_env_keep
+    content: 'Defaults env_keep += "DOCKER_HOST DOCKER_TLS_VERIFY"'
+    owner: root
+    group: root
+    mode: '0440'
