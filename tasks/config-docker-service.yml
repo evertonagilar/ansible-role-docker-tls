@@ -38,7 +38,12 @@
       [Install]
       WantedBy=multi-user.target
 
-- name: Reload and restart Docker
-  command: systemctl daemon-reload
-  notify: Restart Docker
+- name: Stop Docker
+  command: systemctl stop docker
 
+- name: Reload Docker
+  command: systemctl daemon-reload
+  
+- name: Start Docker
+  command: systemctl start docker
+  
